@@ -399,6 +399,6 @@ This project does not rely on any external dependencies, making it easy to set u
 This project is licensed under the [MIT License](LICENSE).
 
 
-# DBreeze JSONQUERY
+# DBreeze JsonQuery
 
 Coming soon
