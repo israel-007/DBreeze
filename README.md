@@ -370,7 +370,7 @@ From all the examples above, we can see DBreeze allows method chaining which can
         ->limit(5)
         ->run();
 
-    Query: SELECT * FROM users WHERE id > 1 AND id BETWEEN 3 AND 5 ORDER BY id ASC LIMIT 5
+    // Query: SELECT * FROM users WHERE id > 1 AND id BETWEEN 3 AND 5 ORDER BY id ASC LIMIT 5
 
     $users = $db->table('users')
         ->select()
@@ -380,7 +380,7 @@ From all the examples above, we can see DBreeze allows method chaining which can
         ->limit(5)
         ->run();
 
-    Query: SELECT * FROM users WHERE id > 1 AND id BETWEEN 3 AND 5 ORDER BY id ASC LIMIT 5
+    // Query: SELECT * FROM users WHERE id > 1 AND id BETWEEN 3 AND 5 ORDER BY id ASC LIMIT 5
 
 ?>
 
