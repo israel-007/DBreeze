@@ -388,7 +388,7 @@ From all the examples above, we can see DBreeze allows method chaining which can
 
 ## Contribution
 
-Contributions to Mobile ISP are welcomed! Feel free to submit pull requests or open issues if you encounter any problems or have suggestions for improvement.
+Contributions to DBreeze are welcomed! Feel free to submit pull requests or open issues if you encounter any problems or have suggestions for improvement.
 
 ## Dependencies
 
