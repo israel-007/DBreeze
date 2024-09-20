@@ -386,23 +386,6 @@ From all the examples above, we can see DBreeze allows method chaining which can
 
 ```
 
-
-
-
-```php
-<?php
-require_once('config/autoload.php');
-
-// Initialize the DB class
-$db = new DB('localhost', 'your_database', 'root', 'password');
-
-?>
-```
-
-Replace 'your_phone_number_here' with the phone number you want to lookup, and 'country name' with the correct country name (spaces included)
-
-The **Provider::check()** and **Provider::get()** method returns a JSON response with all the information needed.
-
 ## Contribution
 
 Contributions to Mobile ISP are welcomed! Feel free to submit pull requests or open issues if you encounter any problems or have suggestions for improvement.
