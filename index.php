@@ -1,3 +1,4 @@
 <?php
 
-require('config/autoload.php');
+require('DBreeze/autoload.php');
+

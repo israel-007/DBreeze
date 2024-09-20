@@ -1,7 +1,7 @@
 <?php
 
 // Load all table class files dynamically
-$folder = glob(__DIR__ . '/tables' . '/*');
+$folder = glob(__DIR__ . '../../AppTables' . '/*');
 
 foreach ($folder as $file) {
 

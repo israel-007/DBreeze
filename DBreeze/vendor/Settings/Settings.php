@@ -26,7 +26,7 @@ function loadEnv($filePath)
 }
 
 // Call the env function immediately
-loadEnv(__DIR__ . '/../app.env');
+loadEnv(__DIR__ . '/../../config/app.env');
 
 // Serve the settings based on HTTP_HOST
 if ($_SERVER['HTTP_HOST'] == 'localhost' or $_SERVER['HTTP_HOST'] == '127.0.0.1' or $_SERVER['HTTP_HOST'] == '192.168.43.96') {
@@ -54,4 +54,3 @@ if ($_SERVER['HTTP_HOST'] == 'localhost' or $_SERVER['HTTP_HOST'] == '127.0.0.1'
 
 
 }
-

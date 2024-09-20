@@ -15,30 +15,21 @@ ini_set('upload_max_filesize', '20M');
 // Set maximum post size to 22M
 ini_set('post_max_size', '22M');
 
-require_once (__DIR__ . '/bootstrap/main.php');
+require_once (__DIR__ . '/vendor/Settings/Settings.php');
 
-require_once (__DIR__ . '/bootstrap/app.php');
+require_once (__DIR__ . '/vendor/APP_CLASS/app.php');
 
-require_once (__DIR__ . '/database/mysqli_connect.php');
+require_once (__DIR__ . '/vendor/JsonQuery/JsonQuery.php');
 
-require_once (__DIR__ . '/queryBuilder/DB.php');
+require_once (__DIR__ . '/config/database/mysqli_connect.php');
 
-require_once (__DIR__ . '/queryBuilder/BaseModel.php');
+require_once (__DIR__ . '/vendor/QueryBuilder/DB.php');
 
-require_once (__DIR__ . '/queryBuilder/Registry.php');
+require_once (__DIR__ . '/vendor/QueryBuilder/BaseModel.php');
 
-require_once (__DIR__ . '/queryBuilder/TableRegistry.php');
+require_once (__DIR__ . '/vendor/QueryBuilder/Registry.php');
 
-
-$folder = glob(__DIR__ . '/bootstrap' . '/*');
-
-$i = 0;
-
-foreach ($folder as $file) {
-
-    require_once ($file);
-
-}
+require_once (__DIR__ . '/vendor/QueryBuilder/TableRegistry.php');
 
 if (!APP::GetCookie('app_session') or empty(APP::GetCookie('app_session'))) {
 

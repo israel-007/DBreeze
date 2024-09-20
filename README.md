@@ -6,13 +6,13 @@ A lightweight and flexible PHP query builder for simplifying database operations
 
 1. Download the project files.
 2. Extract the files to your server directory.
-3. Include the `autoload.php` file located inside the `config` folder in your project.
+3. Include the `autoload.php` file located inside the `DBreeze` folder in your project.
 
 ## Database Settings
 
 Define your Database
 
-You can do this by editing the `app.env` file inside the config folder, you can find 2 seetings there, one for locan development and other for live development. This makes database definition easy either youre developing locally or you just host your project, you wont have to update the database settings every time. 
+You can do this by editing the `app.env` file inside the `DBreeze/config` folder, you can find 2 seetings there, one for locan development and other for live development. This makes database definition easy either youre developing locally or you just host your project, you wont have to update the database settings every time. 
 
 Once that is done, you can start development.
 
@@ -26,7 +26,7 @@ Example:
 2. Determin the table structure.
 3. Create a class to handle the table requests.
 
-Inside `config/quiryBuilder/tables`, create a file with youre table name as the file name e.g `users.php` for the users table
+Inside `DBreeze/AppTables`, create a file with youre table name as the file name e.g `users.php` for the users table
 
 Inside the file paste the following code
 
@@ -55,7 +55,7 @@ class Users extends BaseModel
 
 ```
 
-1. The class name should be your table name, assingn your table name to `$table`
+1. The class name should be your table name, and also assingn your table name to `$table`
 2. `$tableStructure` should contain your desired table structure, this allows you to update or create the table and its structure within your project
 
 Once the above has been done, goahead an rrun the below code in your `index.php`
