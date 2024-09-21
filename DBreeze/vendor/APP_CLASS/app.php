@@ -52,7 +52,6 @@ class APP
 
         $clean = trim($var);
 
-        // $clean = preg_replace('/[/^a-zA-Z0-9\s,@._-' . ($tags ? '<>' : '') . ']/', '', $clean);
         $clean = preg_replace('/[^a-zA-Z0-9\s,@._\-\/' . ($tags ? '<>' : '') . ']/', '', $clean);
 
         return $clean;
