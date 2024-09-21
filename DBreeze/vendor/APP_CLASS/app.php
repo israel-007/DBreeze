@@ -59,6 +59,110 @@ class APP
 
     }
 
+    public static function validate(array $data): array
+    {
+        foreach ($data as $value => $ruleSet) {
+            $ruleArray = explode(',', $ruleSet);
+
+            foreach ($ruleArray as $rule) {
+                [$ruleName, $ruleCondition] = explode('|', trim($rule));
+
+                // Check validation for each rule
+                switch (strtoupper($ruleName)) {
+                    case 'LENGTH':
+                        if (strlen($value) < intval($ruleCondition)) {
+                            return [
+                                false,
+                                'message' => "The input '$value' must be at least $ruleCondition characters long."
+                            ];
+                        }
+                        break;
+
+                    case 'TYPE':
+                        if (strtoupper($ruleCondition) === 'PASSWORD') {
+                            // Ensure the password has at least one alphabetic and one numeric character
+                            if (!preg_match('/[a-zA-Z0-9]/', $value)) {
+                                return [
+                                    false,
+                                    'message' => "Your password must contain alphanumeric characters."
+                                ];
+                            }
+                        } elseif (strtoupper($ruleCondition) === 'EMAIL') {
+                            if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                                return [
+                                    false,
+                                    'message' => "The email '$value' is not a valid email address."
+                                ];
+                            }
+                        } elseif (strtoupper($ruleCondition) === 'PHONENUMBER') {
+                            if (!preg_match('/^\d{10,11}$/', $value)) {
+                                return [
+                                    false,
+                                    'message' => "The phone number '$value' must be a valid 10 or 11-digit number."
+                                ];
+                            }
+                        } elseif (strtoupper($ruleCondition) === 'STRING') {
+                            if (!is_string($value)) {
+                                return [
+                                    false,
+                                    'message' => "The input '$value' must be a valid string."
+                                ];
+                            }
+                        }
+                        break;
+
+                    case 'SPECIALCHARS':
+                        if (strtoupper($ruleCondition) === 'TRUE' && !preg_match('/[\W_]/', $value)) {
+                            return [
+                                false,
+                                'message' => "The input '$value' must contain at least one special character."
+                            ];
+                        }
+                        break;
+
+                    case 'NUMERIC':
+                        if (!is_numeric($value)) {
+                            return [
+                                false,
+                                'message' => "The input '$value' must be a number."
+                            ];
+                        }
+                        break;
+
+                    case 'ALPHANUMERIC':
+                        if (!ctype_alnum($value)) {
+                            return [
+                                false,
+                                'message' => "The input '$value' must be alphanumeric."
+                            ];
+                        }
+                        break;
+
+                    case 'REQUIRED':
+                        if (strtoupper($ruleCondition) === 'TRUE' && empty($value)) {
+                            return [
+                                false,
+                                'message' => "The input '$value' is required."
+                            ];
+                        }
+                        break;
+
+                    default:
+                        return [
+                            false,
+                            'message' => "Unknown validation rule: $ruleName."
+                        ];
+                }
+            }
+        }
+
+        // All validations passed
+        return [
+            true,
+            'message' => 'success'
+        ];
+    }
+
     static public function dump($data)
     {
 
