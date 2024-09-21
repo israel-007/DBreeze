@@ -141,7 +141,6 @@ class DB
         return $this;
     }
 
-    // Set the sum query
     public function sum($column, $conditions = [])
     {
         $this->queryType = 'select';
@@ -150,7 +149,6 @@ class DB
         return $this;
     }
 
-    // Insert data into the table, query is executed in run()
     public function insert($data)
     {
         $this->queryType = 'insert';
@@ -162,16 +160,13 @@ class DB
         return $this;
     }
 
-    // Update data in the table, query is executed in run()
     public function update($data, $conditions)
     {
         $this->queryType = 'update';
 
-        // Automatically update the 'updated_at' column if it exists
         if ($this->columnExists('updated_at')) {
             $data['updated_at'] = date('Y-m-d H:i:s');
         } else {
-            // If the updated_at column doesn't exist, create it, then update
             $this->addUpdatedAtColumn();
             $data['updated_at'] = date('Y-m-d H:i:s');
         }
@@ -186,27 +181,23 @@ class DB
 
         $this->query = "UPDATE {$this->table} SET $setPart WHERE $wherePart";
 
-        // Merge data and conditions for binding
         $this->params = array_merge($data, array_combine(array_map(function ($key) {
             return "cond_$key";
         }, array_keys($conditions)), array_values($conditions)));
         return $this;
     }
 
-    // Delete data from the table, query is executed in run()
     public function delete(array $conditions = [])
     {
         $this->query = "DELETE FROM {$this->table}";
 
-        // If conditions are passed directly to delete(), handle them here
         if (!empty($conditions)) {
-            $this->where($conditions);  // Use the where method to process conditions
+            $this->where($conditions);
         }
 
-        return $this;  // Allow chaining
+        return $this;
     }
 
-    // IN condition method
     public function in($column, $values = [])
     {
         $placeholders = implode(', ', array_fill(0, count($values), '?'));
@@ -215,7 +206,6 @@ class DB
         return $this;
     }
 
-    // NOT IN condition method
     public function notIn($column, $values = [])
     {
         $placeholders = implode(', ', array_fill(0, count($values), '?'));
@@ -224,54 +214,46 @@ class DB
         return $this;
     }
 
-    // BETWEEN condition method
     public function between($column, $range = [])
     {
         if (count($range) !== 2) {
             throw new Exception("The between() method requires an array with exactly two values.");
         }
 
-        // Check if a WHERE clause already exists, append using AND if it does
         if (strpos($this->query, 'WHERE') !== false) {
             $this->query .= " AND $column BETWEEN :{$column}_min AND :{$column}_max";
         } else {
             $this->query .= " WHERE $column BETWEEN :{$column}_min AND :{$column}_max";
         }
 
-        // Bind the parameters for BETWEEN
         $this->params["{$column}_min"] = $range[0];
         $this->params["{$column}_max"] = $range[1];
 
         return $this;
     }
 
-    // IS NULL condition method
     public function null($column)
     {
         $this->query .= " WHERE $column IS NULL";
         return $this;
     }
 
-    // IS NOT NULL condition method
     public function notNull($column)
     {
         $this->query .= " WHERE $column IS NOT NULL";
         return $this;
     }
 
-    // Raw SQL method (e.g., for complex conditions)
     public function raw($sql)
     {
         $this->query .= " WHERE $sql";
         return $this;
     }
 
-    // Create table dynamically, adding created_at and updated_at if they are missing
     public function createTable($tableName, $columns)
     {
         $this->queryType = 'createTable';
 
-        // Add created_at and updated_at if not provided
         if (!isset($columns['created_at'])) {
             $columns['created_at'] = 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP';
         }
@@ -290,7 +272,6 @@ class DB
         return $this;
     }
 
-    // Check if a column exists in the current table
     private function columnExists($columnName)
     {
         $query = "SHOW COLUMNS FROM {$this->table} LIKE :column";
@@ -299,14 +280,12 @@ class DB
         return $stmt->fetch() !== false;
     }
 
-    // Add updated_at column to the current table if it doesn't exist
     private function addUpdatedAtColumn()
     {
         $query = "ALTER TABLE {$this->table} ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP";
-        $this->pdo->exec($query); // Directly execute the query
+        $this->pdo->exec($query);
     }
 
-    // Method to log errors in a file
     private function logError($query, $errorMessage, $params = [])
     {
         $timestamp = date('Y-m-d H:i:s');
@@ -319,58 +298,49 @@ class DB
         $logMessage .= "Possible Solution: Please check the query structure, table existence, and data types.\n";
         $logMessage .= "---------------------------\n";
 
-        // Append the log message to the file, create the file if it doesn't exist
         file_put_contents($this->logFile, $logMessage, FILE_APPEND);
     }
 
-    // Final method to execute the query after it's built
     public function run()
     {
-        // If no ORDER BY clause has been added, set a default order
         if (stripos($this->query, 'ORDER BY') === false) {
-            $this->order('id', 'DESC');  // Default ordering by id DESC
+            $this->order('id', 'DESC');
         }
 
-        // Append the LIMIT clause at the end, if it exists
         if (!empty($this->limitClause)) {
             $this->query .= $this->limitClause;
         }
 
-        // If debugging is enabled, log the query
         if ($this->debug) {
-            $logFile = __DIR__ . '/query_log.txt';  // Log file path
+            $logFile = __DIR__ . '/query_log.txt';
 
-            // Construct the log message
             $logMessage = "[" . date('Y-m-d H:i:s') . "] Executing Query: " . $this->query . PHP_EOL;
             $logMessage .= "With Params: " . json_encode($this->params) . PHP_EOL;
 
-            // Log the message to the file
             file_put_contents($logFile, $logMessage, FILE_APPEND);
         }
 
         $stmt = $this->pdo->prepare($this->query);
         $stmt->execute($this->params);
 
-        // Handle different query types
         if (stripos($this->query, 'SELECT') === 0) {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } elseif (stripos($this->query, 'COUNT') !== false) {
             return $stmt->fetchColumn();
         } elseif (stripos($this->query, 'DELETE') === 0 || stripos($this->query, 'UPDATE') === 0 || stripos($this->query, 'INSERT') === 0) {
-            return $stmt->rowCount() > 0;  // Return true if rows were affected
+            return $stmt->rowCount() > 0;
         }
 
         return false;
     }
 
-    // Helper to reset query state
     private function resetQuery()
     {
         $this->query = '';
         $this->params = [];
         $this->limit = null;
-        $this->order = 'id DESC'; // Default order by id in descending order
-        $this->queryType = ''; // Reset the query type
+        $this->order = 'id DESC';
+        $this->queryType = '';
     }
 
     public function runQuery($query)
@@ -382,5 +352,4 @@ class DB
     
 }
 
-// Initialize the database connection
 $db = new DB($db_host, $db_name, $db_user, $db_pass);
