@@ -10,8 +10,8 @@ class DB
     private $limitClause = '';
     private $limit;
     private $order;
-    private $queryType; // To store the type of query being built (select, insert, delete, etc.)
-    private $logFile = 'error_log.txt'; // Path to error log file
+    private $queryType;
+    private $logFile = 'error_log.txt';
 
     public function __construct($host, $dbname, $username, $password)
     {
@@ -24,7 +24,6 @@ class DB
         }
     }
 
-    // Set the table we're working with
     public function table($table)
     {
         $this->table = $table;
@@ -32,7 +31,6 @@ class DB
         return $this;
     }
 
-    // Set the columns for select or distinct
     public function select($columns = '*')
     {
         $this->queryType = 'select';
@@ -47,12 +45,12 @@ class DB
 
     public function find($conditions)
     {
-        // If the input is an integer, assume it's an ID and search by ID
+        
         if (is_int($conditions)) {
             $this->query = "SELECT * FROM {$this->table} WHERE id = :id";
             $this->params['id'] = $conditions;
         }
-        // If the input is an array, use it for the WHERE conditions
+        
         elseif (is_array($conditions)) {
             $this->query = "SELECT * FROM {$this->table} WHERE ";
             $clauses = [];
@@ -73,11 +71,10 @@ class DB
         return $this;
     }
 
-    // Set the WHERE conditions
     public function where($conditions = [])
     {
         if (!strpos($this->query, 'WHERE')) {
-            $this->query .= " WHERE ";  // Add WHERE clause if not already present
+            $this->query .= " WHERE ";
         } else {
             $this->query .= " AND ";  // Chain additional conditions with AND
         }
