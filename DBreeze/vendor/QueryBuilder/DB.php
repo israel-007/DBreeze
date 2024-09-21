@@ -76,36 +76,36 @@ class DB
         if (!strpos($this->query, 'WHERE')) {
             $this->query .= " WHERE ";
         } else {
-            $this->query .= " AND ";  // Chain additional conditions with AND
+            $this->query .= " AND ";
         }
 
         $clauses = [];
         foreach ($conditions as $column => $value) {
-            // Check for LIKE operations combined with OR (||)
+            
             if (strpos($value, '||') !== false && strpos($value, '%') !== false) {
-                // Split the value by '||' and create multiple LIKE conditions
+                
                 $orConditions = explode('||', $value);
                 $orClauses = [];
                 foreach ($orConditions as $index => $orValue) {
                     $param = $column . '_or_' . $index;
                     $orClauses[] = "$column LIKE :$param";
-                    $this->params[$param] = trim($orValue);  // Bind the value with LIKE
+                    $this->params[$param] = trim($orValue);
                 }
-                $clauses[] = '(' . implode(' OR ', $orClauses) . ')';  // Join OR conditions
+                $clauses[] = '(' . implode(' OR ', $orClauses) . ')';
             }
-            // Check for simple LIKE conditions
+            
             elseif (strpos($value, '%') !== false) {
                 $clauses[] = "$column LIKE :$column";
                 $this->params[$column] = $value;
             }
-            // Check for standard conditions with comparison operators
+            
             elseif (preg_match('/(>=|<=|>|<|!=|=)/', $value, $matches)) {
                 $operator = $matches[0];
                 $realValue = trim(str_replace($operator, '', $value));
                 $clauses[] = "$column $operator :$column";
                 $this->params[$column] = $realValue;
             }
-            // Handle simple equality
+            
             else {
                 $clauses[] = "$column = :$column";
                 $this->params[$column] = $value;
@@ -116,11 +116,10 @@ class DB
         return $this;
     }
 
-    // Set the limit for the number of rows to retrieve
     public function limit($start, $end = null)
     {
         if ($end !== null) {
-            $this->limitClause = " LIMIT $start, $end";  // Store the LIMIT clause
+            $this->limitClause = " LIMIT $start, $end";
         } else {
             $this->limitClause = " LIMIT $start";
         }
@@ -128,14 +127,12 @@ class DB
         return $this;
     }
 
-    // Set the order of the results
     public function order($column = 'id', $direction = 'DESC')
     {
         $this->query .= " ORDER BY $column $direction";
         return $this;
     }
 
-    // Set the count query
     public function count($conditions = [])
     {
         $this->queryType = 'select';
