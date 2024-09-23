@@ -58,8 +58,10 @@ class APP
 
     }
 
-    public static function validate(array $data): array
-    {
+    public static function validate(array $data): array {
+
+        $errors = [];
+
         foreach ($data as $value => $ruleSet) {
             $ruleArray = explode(',', $ruleSet);
 
@@ -77,13 +79,41 @@ class APP
                         }
                         break;
 
+                    case 'MAXLENGTH':
+                        if (strlen($value) > intval($ruleCondition)) {
+                            return [
+                                false,
+                                'message' => "The input '$value' must not exceed $ruleCondition characters."
+                            ];
+                        }
+                        break;
+
+                    case 'MINLENGTH':
+                        if (strlen($value) < intval($ruleCondition)) {
+                            return [
+                                false,
+                                'message' => "The input '$value' must be at least $ruleCondition characters long."
+                            ];
+                        }
+                        break;
+
+                    case 'BETWEEN':
+                        list($min, $max) = explode(',', $ruleCondition);
+                        if ($value < intval($min) || $value > intval($max)) {
+                            return [
+                                false,
+                                'message' => "The input '$value' must be between $min and $max."
+                            ];
+                        }
+                        break;
+
                     case 'TYPE':
                         if (strtoupper($ruleCondition) === 'PASSWORD') {
                             // Ensure the password has at least one alphabetic and one numeric character
                             if (!preg_match('/[a-zA-Z0-9]/', $value)) {
                                 return [
                                     false,
-                                    'message' => "Your password must contain alphanumeric characters."
+                                    'message' => "The password '$value' must contain alphanumeric characters."
                                 ];
                             }
                         } elseif (strtoupper($ruleCondition) === 'EMAIL') {
@@ -105,6 +135,27 @@ class APP
                                 return [
                                     false,
                                     'message' => "The input '$value' must be a valid string."
+                                ];
+                            }
+                        } elseif (strtoupper($ruleCondition) === 'URL') {
+                            if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                                return [
+                                    false,
+                                    'message' => "The input '$value' is not a valid URL."
+                                ];
+                            }
+                        } elseif (strtoupper($ruleCondition) === 'DATE') {
+                            if (!strtotime($value)) {
+                                return [
+                                    false,
+                                    'message' => "The input '$value' is not a valid date."
+                                ];
+                            }
+                        } elseif (strtoupper($ruleCondition) === 'BOOLEAN') {
+                            if (!in_array($value, ['1', '0', 'true', 'false', 'yes', 'no'], true)) {
+                                return [
+                                    false,
+                                    'message' => "The input '$value' must be a boolean value (true/false, 1/0, yes/no)."
                                 ];
                             }
                         }
@@ -138,10 +189,48 @@ class APP
                         break;
 
                     case 'REQUIRED':
-                        if (strtoupper($ruleCondition) === 'TRUE' && empty($value)) {
+                        if (empty($value)) {
                             return [
                                 false,
                                 'message' => "The input '$value' is required."
+                            ];
+                        }
+                        break;
+
+                    case 'IN':
+                        $allowedValues = explode(',', $ruleCondition);
+                        if (!in_array($value, $allowedValues)) {
+                            return [
+                                false,
+                                'message' => "The input '$value' must be one of the following: " . implode(', ', $allowedValues) . "."
+                            ];
+                        }
+                        break;
+
+                    case 'NOTIN':
+                        $disallowedValues = explode(',', $ruleCondition);
+                        if (in_array($value, $disallowedValues)) {
+                            return [
+                                false,
+                                'message' => "The input '$value' must not be one of the following: " . implode(', ', $disallowedValues) . "."
+                            ];
+                        }
+                        break;
+
+                    case 'REGEX':
+                        if (!preg_match($ruleCondition, $value)) {
+                            return [
+                                false,
+                                'message' => "The input '$value' does not match the required format."
+                            ];
+                        }
+                        break;
+
+                    case 'CONFIRMED':
+                        if ($value !== $ruleCondition) {
+                            return [
+                                false,
+                                'message' => "The input '$value' must match the field '$ruleCondition'."
                             ];
                         }
                         break;

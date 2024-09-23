@@ -139,7 +139,7 @@ Both examples select all rows from the users table.
 
 ```
 
-When inserting, you don not need to provide `created_at` and `updated_at` column values, those column get filled when inserting new records.
+When inserting, you do not need to provide `created_at` and `updated_at` column values, those column get filled when inserting new records.
 
 
 `UPDATING`
@@ -149,7 +149,7 @@ When inserting, you don not need to provide `created_at` and `updated_at` column
 <?php
 
     // Update the users table
-    $users = Users::update(['username' => 'John Doe'], ['id' => 1])->run();
+    $users = Users::update(['username' => 'JohnDoe'], ['id' => 1])->run();
 
     print_r($users);
     exit();
@@ -180,7 +180,7 @@ The query would look like `UPDATE users SET username = 'John Doe' WHERE id = 1  
 
 <?php
 
-    // Find id=1 from the users table
+    // Find id = 1 from the users table
     $user = Users::find(1)->run();
 
     // Find also takes an array
@@ -211,7 +211,7 @@ The query would look like `UPDATE users SET username = 'John Doe' WHERE id = 1  
 
 <?php
 
-    // Between method takes a column name as forst argument
+    // Between method takes a column name as first argument
     $users = Users::select()->between('age', [20, 30])->run();
 
 ?>
@@ -242,7 +242,7 @@ The query would look like `UPDATE users SET username = 'John Doe' WHERE id = 1  
 
 <?php
 
-    // Default order uses => ORDER BY id DESC
+    // Default order uses ORDER BY id DESC
     $users = Users::select('*')->run();
 
     // Specify a order using order()
