@@ -1,6 +1,6 @@
 # DBreeze
 
-A lightweight and flexible PHP query builder for simplifying database operations like `SELECT`, `WHERE`, `LIMIT`, `ORDER BY`, `BETWEEN`, and more. The class allows you to build complex queries using method chaining, while maintaining SQL injection protection through prepared statements.
+A lightweight and flexible PHP query builder for simplifying database operations like `SELECT`, `WHERE`, `LIMIT`, `ORDER BY`, `BETWEEN`, and more. The class allows you to build complex queries using method chaining while maintaining SQL injection protection through prepared statements.
 
 ## Installation
 
@@ -12,21 +12,21 @@ A lightweight and flexible PHP query builder for simplifying database operations
 
 Define your Database
 
-You can do this by editing the `app.env` file inside the `DBreeze/config` folder, you can find 2 seetings there, one for locan development and other for live development. This makes database definition easy either youre developing locally or you just host your project, you wont have to update the database settings every time. 
+You can do this by editing the `app.env` file inside the `DBreeze/config` folder, you can find 2 settings there, one for local development and the other for live development. This makes database definition easy either you're developing locally or you just host your project, you won't have to update the database settings every time. 
 
 Once that is done, you can start development.
 
 ## Create Tables
 
-Creating tables has also been made easy with DBreeze, you won't have to manually create tables and its structures, you can do all that withing your project
+Creating tables has also been made easy with DBreeze, you won't have to manually create tables and its structures, and you can do all that within your project
 
 Example:
 
-1. Determin your table name.
-2. Determin the table structure.
+1. Determine your table name.
+2. Determine the table structure.
 3. Create a class to handle the table requests.
 
-Inside `DBreeze/AppTables`, create a file with youre table name as the file name e.g `users.php` for the users table
+Inside `DBreeze/AppTables`, create a file with your table name as the file name e.g `users.php` for the user's table
 
 Inside the file paste the following code
 
@@ -55,10 +55,10 @@ class Users extends BaseModel
 
 ```
 
-1. The class name should be your table name, and also assingn your table name to `$table`
+1. The class name should be your table name, and also assign your table name to `$table`
 2. `$tableStructure` should contain your desired table structure, this allows you to update or create the table and its structure within your project
 
-Once the above has been done, goahead an rrun the below code in your `index.php`
+Once the above has been done, go ahead and run the below code in your `index.php`
 
 ```php
 
@@ -75,7 +75,7 @@ This returns either true or false.
 
 Others
 
-`$create_users_table = Users::TableStructure()->update();` to update the table struture in database if you made any changes to the table structure in the table class.
+`$create_users_table = Users::TableStructure()->update();` to update the table structure in the database if you made any changes to the table structure in the table class.
 `$create_users_table = Users::TableStructure()->drop();` to delete the table.
 
 
@@ -105,7 +105,7 @@ There are several ways to build queries using `DBreeze`
 
 ```
 
-Both examples select all rows from the users table.
+Both examples select all rows from the user's table.
 
 `INSERT`
 
@@ -115,7 +115,7 @@ Both examples select all rows from the users table.
 
     $password = md5('password');
 
-    // Insert into the users table
+    // Insert into the user's table
     $users = $db->table('users')->insert([
         'username' => 'John',
         'email' => 'john@gmail.com',
@@ -125,7 +125,7 @@ Both examples select all rows from the users table.
     print_r($users);
     exit();
 
-    // Insert into the users table
+    // Insert into the user's table
     $users = Users::insert([
         'username' => 'John',
         'email' => 'john@gmail.com',
@@ -139,7 +139,7 @@ Both examples select all rows from the users table.
 
 ```
 
-When inserting, you do not need to provide `created_at` and `updated_at` column values, those column get filled when inserting new records.
+When inserting, you do not need to provide `created_at` and `updated_at` column values, those columns get filled when inserting new records.
 
 
 `UPDATING`
@@ -148,7 +148,7 @@ When inserting, you do not need to provide `created_at` and `updated_at` column 
 
 <?php
 
-    // Update the users table
+    // Update the user's table
     $users = Users::update(['username' => 'JohnDoe'], ['id' => 1])->run();
 
     print_r($users);
@@ -180,7 +180,7 @@ The query would look like `UPDATE users SET username = 'John Doe' WHERE id = 1  
 
 <?php
 
-    // Find id = 1 from the users table
+    // Find id = 1 from the user's table
     $user = Users::find(1)->run();
 
     // Find also takes an array
@@ -211,7 +211,7 @@ The query would look like `UPDATE users SET username = 'John Doe' WHERE id = 1  
 
 <?php
 
-    // Between method takes a column name as first argument
+    // Between method takes a column name as the first argument
     $users = Users::select()->between('age', [20, 30])->run();
 
 ?>
@@ -355,7 +355,7 @@ The query would look like `UPDATE users SET username = 'John Doe' WHERE id = 1  
 
 ```
 
-From all the examples above, we can see DBreeze allows method chaining which can come in very handy and saves a lot of time when making a query and you also dont have to worry about SQL injection
+From all the examples above, we can see DBreeze allows method chaining which can come in very handy and saves a lot of time when making a query and you also do not have to worry about SQL injection
 
 `More elaborate query`
 
