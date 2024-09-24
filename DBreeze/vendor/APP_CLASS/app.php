@@ -522,10 +522,8 @@ class APP
 
         return $strip_name;
     }
-    // -- CURRENT PAGE NAME --
 
     // JSON METHODS ------------START----------------
-
     static public function JsonPush($data, array $keys, string $json = '{}')
     {
 
@@ -610,7 +608,6 @@ class APP
 
 
     // COOKIE METHODS -----------START----------------
-
     static public function Cookie(string $key, string $value, int $expire = null, string $path = null, $domain = null, bool $secure = null, bool $httponly = null)
     {
 
@@ -667,7 +664,6 @@ class APP
         }
 
     }
-
     // COOKIE METHODS -----------END----------------
 
     static public function userAgent()

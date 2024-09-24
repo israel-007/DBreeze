@@ -6,7 +6,6 @@ class BaseModel
     protected static $tableStructure;
     protected static $db;
 
-    // Inject DB instance
     public static function setDBInstance($db)
     {
         self::$db = $db;
