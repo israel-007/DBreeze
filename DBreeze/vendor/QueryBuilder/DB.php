@@ -244,12 +244,6 @@ class DB
         return $this;
     }
 
-    public function raw($sql)
-    {
-        $this->query .= " WHERE $sql";
-        return $this;
-    }
-
     public function createTable($tableName, $columns)
     {
         $this->queryType = 'createTable';
@@ -348,6 +342,12 @@ class DB
         $stmt = $this->pdo->prepare($query);
         $stmt->execute();
         return $stmt;
+    }
+
+    public function raw($sql)
+    {
+        $this->query .= " WHERE $sql";
+        return $this;
     }
     
 }

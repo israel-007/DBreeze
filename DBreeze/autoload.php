@@ -21,6 +21,8 @@ require_once (__DIR__ . '/vendor/APP_CLASS/app.php');
 
 require_once (__DIR__ . '/vendor/JsonQuery/JsonQuery.php');
 
+require_once (__DIR__ . '/vendor/JsonQuery/JsonError.php');
+
 require_once (__DIR__ . '/config/database/mysqli_connect.php');
 
 require_once (__DIR__ . '/vendor/QueryBuilder/DB.php');
