@@ -315,14 +315,22 @@ class DB
         }
 
         $stmt = $this->pdo->prepare($this->query);
-        $stmt->execute($this->params);
+        $success = $stmt->execute($this->params);
 
-        if (stripos($this->query, 'SELECT') === 0) {
+        if (stripos(trim($this->query), 'SELECT') === 0) {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } elseif (stripos($this->query, 'COUNT') !== false) {
+        }
+        
+        elseif (preg_match('/^SELECT\s+COUNT/i', trim($this->query))) {
             return $stmt->fetchColumn();
-        } elseif (stripos($this->query, 'DELETE') === 0 || stripos($this->query, 'UPDATE') === 0 || stripos($this->query, 'INSERT') === 0) {
+        }
+        
+        elseif (stripos(trim($this->query), 'DELETE') === 0 || stripos(trim($this->query), 'UPDATE') === 0) {
             return $stmt->rowCount() > 0;
+        }
+        
+        elseif (stripos(trim($this->query), 'INSERT') === 0) {
+            return $success ? $this->pdo->lastInsertId() : false;
         }
 
         return false;
