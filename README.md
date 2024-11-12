@@ -297,7 +297,7 @@ The query would look like `UPDATE users SET username = 'John Doe' WHERE id = 1  
 
 ```
 
-`COMPARISON OPERATORS` like `>=`, `<=`, `>`, `<`, `!=`, `=`, `%value%`
+`COMPARISON OPERATORS` like `>=`, `<=`, `>`, `<`, `!=`, `=`, `||`, `%value%`
 
 ```php
 
@@ -342,6 +342,13 @@ The query would look like `UPDATE users SET username = 'John Doe' WHERE id = 1  
     $users = Users::select()->where(['id' => '= 4'])->run();
 
     // Query: SELECT * FROM users WHERE id = 4 ORDER BY id DESC
+
+    // ------------------------------------------------------------------
+
+    // '||'
+    $users = Users::select()->where(['id' => '4 || 5'])->run();
+
+    // Query: SELECT * FROM users WHERE id = 4 OR id = 5 ORDER BY id DESC
 
     // ------------------------------------------------------------------
 

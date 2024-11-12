@@ -82,31 +82,36 @@ class DB
         $clauses = [];
         foreach ($conditions as $column => $value) {
             
-            if (strpos($value, '||') !== false && strpos($value, '%') !== false) {
-                
+            if (strpos($value, '||') !== false) {
                 $orConditions = explode('||', $value);
                 $orClauses = [];
                 foreach ($orConditions as $index => $orValue) {
-                    $param = $column . '_or_' . $index;
-                    $orClauses[] = "$column LIKE :$param";
+                    $param = "{$column}_or_{$index}";
+                    if (strpos($orValue, '%') !== false) {
+                        
+                        $orClauses[] = "$column LIKE :$param";
+                    } else {
+                        
+                        $orClauses[] = "$column = :$param";
+                    }
                     $this->params[$param] = trim($orValue);
                 }
                 $clauses[] = '(' . implode(' OR ', $orClauses) . ')';
-            }
-            
-            elseif (strpos($value, '%') !== false) {
+
+            } elseif (strpos($value, '%') !== false) {
+                
                 $clauses[] = "$column LIKE :$column";
                 $this->params[$column] = $value;
-            }
-            
-            elseif (preg_match('/(>=|<=|>|<|!=|=)/', $value, $matches)) {
+
+            } elseif (preg_match('/(>=|<=|>|<|!=|=)/', $value, $matches)) {
+                
                 $operator = $matches[0];
                 $realValue = trim(str_replace($operator, '', $value));
                 $clauses[] = "$column $operator :$column";
                 $this->params[$column] = $realValue;
-            }
-            
-            else {
+
+            } else {
+                
                 $clauses[] = "$column = :$column";
                 $this->params[$column] = $value;
             }
