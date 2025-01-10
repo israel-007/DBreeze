@@ -393,6 +393,10 @@ From all the examples above, we can see DBreeze allows method chaining which can
 
 ```
 
+## Updates
+
+> AppTables can now be referenced in app.env: You can change the location of you AppTables in DBreeze/app.env if you decide to move it.
+
 ## Contribution
 
 Contributions to DBreeze are welcomed! Feel free to submit pull requests or open issues if you encounter any problems or have suggestions for improvement.

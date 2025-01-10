@@ -43,3 +43,7 @@ if ($_SERVER['HTTP_HOST'] == 'localhost' or $_SERVER['HTTP_HOST'] == '127.0.0.1'
     $db_pass = getenv('LIVE_DB_PASS');
 
 }
+
+// Declare other env properties
+
+$database_tables_location = getenv('DATABASE_TABLES_LOCATION');
