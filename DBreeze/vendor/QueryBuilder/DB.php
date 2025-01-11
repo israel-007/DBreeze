@@ -2,10 +2,10 @@
 
 class DB
 {
-    private $debug = false;
+    private $debug;
     private $pdo;
     private $table;
-    private $query;
+    public $query;
     private $params = [];
     private $limitClause = '';
     private $limit;
@@ -13,11 +13,13 @@ class DB
     private $queryType;
     private $logFile = 'error_log.txt';
 
-    public function __construct($host, $dbname, $username, $password)
+    public function __construct($host, $dbname, $username, $password, $debug_dbreeze)
     {
         try {
             $this->pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $this->debug = filter_var($debug_dbreeze, FILTER_VALIDATE_BOOLEAN);
         } catch (PDOException $e) {
             $this->logError("Connection Error", $e->getMessage(), null);
             die("Connection failed: " . $e->getMessage());
@@ -249,6 +251,12 @@ class DB
         return $this;
     }
 
+    public function join($table, $firstColumn, $operator, $secondColumn, $type = 'INNER')
+    {
+        $this->query .= " $type JOIN $table ON $firstColumn $operator $secondColumn";
+        return $this;
+    }
+
     public function createTable($tableName, $columns)
     {
         $this->queryType = 'createTable';
@@ -302,6 +310,11 @@ class DB
 
     public function run()
     {
+
+        if (stripos($this->query, 'JOIN') == true && stripos($this->query, 'ORDER BY') === false) {
+            $this->order($this->table . '.id', 'DESC');
+        }
+
         if (stripos($this->query, 'ORDER BY') === false) {
             $this->order('id', 'DESC');
         }
@@ -311,7 +324,7 @@ class DB
         }
 
         if ($this->debug) {
-            $logFile = __DIR__ . '/query_log.txt';
+            $logFile = __DIR__ . '../../../../query_log.txt';
 
             $logMessage = "[" . date('Y-m-d H:i:s') . "] Executing Query: " . $this->query . PHP_EOL;
             $logMessage .= "With Params: " . json_encode($this->params) . PHP_EOL;
@@ -365,4 +378,4 @@ class DB
     
 }
 
-$db = new DB($db_host, $db_name, $db_user, $db_pass);
+$db = new DB($db_host, $db_name, $db_user, $db_pass, $debug_dbreeze);
