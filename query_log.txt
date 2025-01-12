@@ -1,0 +1,10 @@
+[2025-01-13 00:05:29] Executing Query: SELECT users.id AS `users_id`, users.first_name AS `users_first_name`, users.last_name AS `users_last_name`, users.email AS `users_email`, users.password AS `users_password`, users.password_reset AS `users_password_reset`, users.created_at AS `users_created_at`, users.updated_at AS `users_updated_at`, products.id AS `products_id`, products.user_id AS `products_user_id`, products.product AS `products_product`, products.quantity AS `products_quantity`, products.type AS `products_type`, products.created_at AS `products_created_at`, products.updated_at AS `products_updated_at` FROM users INNER JOIN products ON users.id = products.user_id WHERE users.id BETWEEN :users_id_min AND :users_id_max ORDER BY users.id DESC
+With Params: {"users_id_min":2,"users_id_max":4}
+
+---------------------------
+
+[2025-01-13 00:05:30] Executing Query: SELECT users.id AS `users_id`, users.first_name AS `users_first_name`, users.last_name AS `users_last_name`, users.email AS `users_email`, users.password AS `users_password`, users.password_reset AS `users_password_reset`, users.created_at AS `users_created_at`, users.updated_at AS `users_updated_at`, products.id AS `products_id`, products.user_id AS `products_user_id`, products.product AS `products_product`, products.quantity AS `products_quantity`, products.type AS `products_type`, products.created_at AS `products_created_at`, products.updated_at AS `products_updated_at` FROM users INNER JOIN products ON users.id = products.user_id WHERE users.id BETWEEN :users_id_min AND :users_id_max ORDER BY users.id DESC
+With Params: {"users_id_min":2,"users_id_max":4}
+
+---------------------------
+

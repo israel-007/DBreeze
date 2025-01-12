@@ -92,28 +92,15 @@ class DB
 
     public function find($conditions)
     {
+        $this->buildSelect();
         if ($this->queryType !== 'select') {
             $this->queryType = 'select';
         }
 
-        if ($this->hasJoin) {
-            // Use prefixed columns for find with joins
-            $columns = "{$this->table}.*";  // Base table columns
-            foreach ($this->joinedTables as $table) {
-                $columns .= ", {$table}.*";  // Add joined table columns
-            }
-            $this->query = "SELECT $columns FROM {$this->table}";
-
-            // Append JOIN clauses
-            foreach ($this->joinClauses as $joinClause) {
-                $this->query .= " " . $joinClause;
-            }
-        } else {
-            $this->query = "SELECT * FROM {$this->table}";
-        }
-
         if (is_int($conditions)) {
-            $this->query .= " WHERE {$this->table}.id = :id";
+            // Assume conditions as primary table's ID
+            $column = "{$this->table}.id";
+            $this->query .= " WHERE $column = :id";
             $this->params['id'] = $conditions;
         } elseif (is_array($conditions)) {
             $clauses = [];
@@ -290,18 +277,22 @@ class DB
 
     public function between($column, $range = [])
     {
+        $this->buildSelect();
+
+        $bindingColumn = str_replace('.', '_', $column);
+
         if (count($range) !== 2) {
             throw new Exception("The between() method requires an array with exactly two values.");
         }
 
         if (strpos($this->query, 'WHERE') !== false) {
-            $this->query .= " AND $column BETWEEN :{$column}_min AND :{$column}_max";
+            $this->query .= " AND $column BETWEEN :{$bindingColumn}_min AND :{$bindingColumn}_max";
         } else {
-            $this->query .= " WHERE $column BETWEEN :{$column}_min AND :{$column}_max";
+            $this->query .= " WHERE $column BETWEEN :{$bindingColumn}_min AND :{$bindingColumn}_max";
         }
 
-        $this->params["{$column}_min"] = $range[0];
-        $this->params["{$column}_max"] = $range[1];
+        $this->params["{$bindingColumn}_min"] = $range[0];
+        $this->params["{$bindingColumn}_max"] = $range[1];
 
         return $this;
     }
@@ -428,16 +419,16 @@ class DB
             $filtered
         );
     }
-    
-    public function run()
+
+    private function prepareQuery()
     {
-
-        // $this->buildSelect();
-
         if (stripos($this->query, 'WHERE') === false) {
             $this->buildSelect();
         }
+    }
 
+    private function applyOrderBy()
+    {
         if ($this->hasJoin && stripos($this->query, 'ORDER BY') === false) {
             $this->order($this->table . '.id', 'DESC');
         }
@@ -445,43 +436,54 @@ class DB
         if (stripos($this->query, 'ORDER BY') === false) {
             $this->order('id', 'DESC');
         }
+    }
 
+    private function applyLimit()
+    {
         if (!empty($this->limitClause)) {
             $this->query .= $this->limitClause;
         }
+    }
 
+    private function logQuery()
+    {
         if ($this->debug) {
             $logFile = __DIR__ . '../../../../query_log.txt';
-
             $logMessage = "[" . date('Y-m-d H:i:s') . "] Executing Query: " . $this->query . PHP_EOL;
-            $logMessage .= "With Params: " . json_encode($this->params) . PHP_EOL;
-
+            $logMessage .= "With Params: " . json_encode($this->params) . PHP_EOL.'';
+            $logMessage .= "\n---------------------------\n\n";
             file_put_contents($logFile, $logMessage, FILE_APPEND);
         }
+    }
+
+    private function processResult($stmt, $success)
+    {
+        $query = trim($this->query);
+
+        if (stripos($query, 'SELECT') === 0) {
+            return $this->hasJoin ? $this->groupJoinResults($stmt->fetchAll(PDO::FETCH_ASSOC)) : $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } elseif (preg_match('/^SELECT\s+COUNT/i', $query)) {
+            return $stmt->fetchColumn();
+        } elseif (stripos($query, 'DELETE') === 0 || stripos($query, 'UPDATE') === 0) {
+            return $stmt->rowCount() > 0;
+        } elseif (stripos($query, 'INSERT') === 0) {
+            return $success ? $this->pdo->lastInsertId() : false;
+        }
+        return false;
+    }
+
+    public function run()
+    {
+        $this->prepareQuery();
+        $this->applyOrderBy();
+        $this->applyLimit();
+
+        $this->logQuery();
 
         $stmt = $this->pdo->prepare($this->query);
         $success = $stmt->execute($this->params);
 
-        if (stripos(trim($this->query), 'SELECT') === 0) {
-            if ($this->hasJoin) {
-                return $this->groupJoinResults($stmt->fetchAll(PDO::FETCH_ASSOC));  // Group and nest joined results
-            }
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-        
-        elseif (preg_match('/^SELECT\s+COUNT/i', trim($this->query))) {
-            return $stmt->fetchColumn();
-        }
-        
-        elseif (stripos(trim($this->query), 'DELETE') === 0 || stripos(trim($this->query), 'UPDATE') === 0) {
-            return $stmt->rowCount() > 0;
-        }
-        
-        elseif (stripos(trim($this->query), 'INSERT') === 0) {
-            return $success ? $this->pdo->lastInsertId() : false;
-        }
-
-        return false;
+        return $this->processResult($stmt, $success);
     }
 
     private function resetQuery()
