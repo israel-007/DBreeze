@@ -11,6 +11,10 @@ class DB
     private $limit;
     private $order;
     private $queryType;
+    private $hasJoin = false;
+    private $joinClauses = [];
+    private $joinedTables = [];
+    private $selectedColumns = '*';
     private $logFile = 'error_log.txt';
 
     public function __construct($host, $dbname, $username, $password, $debug_dbreeze)
@@ -36,35 +40,82 @@ class DB
     public function select($columns = '*')
     {
         $this->queryType = 'select';
-
-        if (is_array($columns)) {
-            $columns = implode(', ', $columns);
-        }
-        $this->query = "SELECT $columns FROM {$this->table}";
+        $this->selectedColumns = $columns;
         return $this;
+
+    }
+
+    public function buildSelect()
+    {
+        if ($this->queryType === 'select') {
+            $columns = $this->selectedColumns;
+            if ($columns === '*') {
+                if ($this->hasJoin) {
+                    // Automatically select prefixed columns
+                    $columns = ["{$this->table}.*"];
+                    foreach ($this->joinedTables as $table) {
+                        $columns[] = "{$table}.*";
+                    }
+                    $columns = implode(', ', $columns);
+                }
+            } elseif (is_array($columns)) {
+                if ($this->hasJoin) {
+                    $columns = array_map(function ($column) {
+                        if (strpos($column, '.') === false) {
+                            return "{$this->table}.$column";
+                        }
+                        return $column;
+                    }, $columns);
+                }
+                $columns = implode(', ', $columns);
+            }
+            $this->query = "SELECT $columns FROM {$this->table}";
+
+            foreach ($this->joinClauses as $joinClause) {
+                $this->query .= " " . $joinClause;
+            }
+        }
 
     }
 
     public function find($conditions)
     {
-        
-        if (is_int($conditions)) {
-            $this->query = "SELECT * FROM {$this->table} WHERE id = :id";
-            $this->params['id'] = $conditions;
+        if ($this->queryType !== 'select') {
+            $this->queryType = 'select';
         }
-        
-        elseif (is_array($conditions)) {
-            $this->query = "SELECT * FROM {$this->table} WHERE ";
+
+        if ($this->hasJoin) {
+            // Use prefixed columns for find with joins
+            $columns = "{$this->table}.*";  // Base table columns
+            foreach ($this->joinedTables as $table) {
+                $columns .= ", {$table}.*";  // Add joined table columns
+            }
+            $this->query = "SELECT $columns FROM {$this->table}";
+
+            // Append JOIN clauses
+            foreach ($this->joinClauses as $joinClause) {
+                $this->query .= " " . $joinClause;
+            }
+        } else {
+            $this->query = "SELECT * FROM {$this->table}";
+        }
+
+        if (is_int($conditions)) {
+            $this->query .= " WHERE {$this->table}.id = :id";
+            $this->params['id'] = $conditions;
+        } elseif (is_array($conditions)) {
             $clauses = [];
             foreach ($conditions as $column => $value) {
-                $clauses[] = "$column = :$column";
-                $this->params[$column] = $value;
+                $bindingColumn = str_replace('.', '_', $column);
+                $clauses[] = "$column = :$bindingColumn";
+                $this->params[$bindingColumn] = $value;
             }
-            $this->query .= implode(" AND ", $clauses);
+            $this->query .= " WHERE " . implode(" AND ", $clauses);
         }
 
         return $this;
     }
+
 
     public function distinct($column)
     {
@@ -75,6 +126,9 @@ class DB
 
     public function where($conditions = [])
     {
+
+        $this->buildSelect();
+
         if (!strpos($this->query, 'WHERE')) {
             $this->query .= " WHERE ";
         } else {
@@ -83,6 +137,8 @@ class DB
 
         $clauses = [];
         foreach ($conditions as $column => $value) {
+
+            $bidingColumn = str_replace('.', '_', $column);
             
             if (strpos($value, '||') !== false) {
                 $orConditions = explode('||', $value);
@@ -102,20 +158,20 @@ class DB
 
             } elseif (strpos($value, '%') !== false) {
                 
-                $clauses[] = "$column LIKE :$column";
-                $this->params[$column] = $value;
+                $clauses[] = "$column LIKE :$bidingColumn";
+                $this->params[$bidingColumn] = $value;
 
             } elseif (preg_match('/(>=|<=|>|<|!=|=)/', $value, $matches)) {
                 
                 $operator = $matches[0];
                 $realValue = trim(str_replace($operator, '', $value));
-                $clauses[] = "$column $operator :$column";
-                $this->params[$column] = $realValue;
+                $clauses[] = "$column $operator :$bidingColumn";
+                $this->params[$bidingColumn] = $realValue;
 
             } else {
                 
-                $clauses[] = "$column = :$column";
-                $this->params[$column] = $value;
+                $clauses[] = "$column = :$bidingColumn";
+                $this->params[$bidingColumn] = $value;
             }
         }
 
@@ -253,7 +309,9 @@ class DB
 
     public function join($table, $firstColumn, $operator, $secondColumn, $type = 'INNER')
     {
-        $this->query .= " $type JOIN $table ON $firstColumn $operator $secondColumn";
+        $this->hasJoin = true;
+        $this->joinedTables[] = $table;  // Track joined table name
+        $this->joinClauses[] = "$type JOIN $table ON $firstColumn $operator $secondColumn";
         return $this;
     }
 
@@ -311,7 +369,11 @@ class DB
     public function run()
     {
 
-        if (stripos($this->query, 'JOIN') == true && stripos($this->query, 'ORDER BY') === false) {
+        if (stripos($this->query, 'WHERE') === false) {
+            $this->buildSelect();
+        }
+
+        if ($this->hasJoin && stripos($this->query, 'ORDER BY') === false) {
             $this->order($this->table . '.id', 'DESC');
         }
 
@@ -372,7 +434,7 @@ class DB
 
     public function raw($sql)
     {
-        $this->query .= " WHERE $sql";
+        $this->query .= $sql;
         return $this;
     }
     
