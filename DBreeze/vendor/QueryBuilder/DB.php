@@ -49,33 +49,45 @@ class DB
     {
         if ($this->queryType === 'select') {
             $columns = $this->selectedColumns;
+
             if ($columns === '*') {
+                // Handle select all columns
                 if ($this->hasJoin) {
-                    // Automatically select prefixed columns
-                    $columns = ["{$this->table}.*"];
+                    $columns = [];
+                    $columns = array_merge($columns, $this->getPrefixedColumns($this->table));
                     foreach ($this->joinedTables as $table) {
-                        $columns[] = "{$table}.*";
+                        $columns = array_merge($columns, $this->getPrefixedColumns($table));
                     }
                     $columns = implode(', ', $columns);
+                } else {
+                    $columns = '*';  // No join, use simple wildcard
                 }
             } elseif (is_array($columns)) {
                 if ($this->hasJoin) {
                     $columns = array_map(function ($column) {
-                        if (strpos($column, '.') === false) {
-                            return "{$this->table}.$column";
-                        }
-                        return $column;
+                        return strpos($column, '.') === false ? "{$this->table}.$column" : $column;
                     }, $columns);
                 }
                 $columns = implode(', ', $columns);
             }
+
+            // Build the SELECT clause
             $this->query = "SELECT $columns FROM {$this->table}";
 
+            // Append JOIN clauses if any
             foreach ($this->joinClauses as $joinClause) {
                 $this->query .= " " . $joinClause;
             }
         }
+    }
 
+    private function getPrefixedColumns($table)
+    {
+        $stmt = $this->pdo->query("DESCRIBE $table");
+        $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return array_map(function ($column) use ($table) {
+            return "$table.$column AS `{$table}_$column`";
+        }, $columns);
     }
 
     public function find($conditions)
@@ -115,7 +127,6 @@ class DB
 
         return $this;
     }
-
 
     public function distinct($column)
     {
@@ -365,9 +376,63 @@ class DB
 
         file_put_contents($this->logFile, $logMessage, FILE_APPEND);
     }
+    private function groupJoinResults(array $result)
+    {
+        if (empty($result)) {
+            return $result;
+        }
 
+        $groupedResult = [];
+        $mainTableAlias = str_replace('.', '_', $this->table);
+        $joinedTableAliases = array_map(function ($table) {
+            return str_replace('.', '_', $table);
+        }, $this->joinedTables);
+
+        $primaryKey = "{$mainTableAlias}_id";
+
+        foreach ($result as $row) {
+            $userId = $row[$primaryKey] ?? null;
+
+            if ($userId === null) {
+                continue; // Skip if no primary key found for main table
+            }
+
+            if (!isset($groupedResult[$userId])) {
+                $groupedResult[$userId] = $this->filterAndRenameColumns($row, $mainTableAlias);
+                foreach ($joinedTableAliases as $alias) {
+                    $groupedResult[$userId][$alias] = [];  // Initialize empty arrays for joined tables
+                }
+            }
+
+            foreach ($joinedTableAliases as $alias) {
+                $nestedData = $this->filterAndRenameColumns($row, $alias);
+                if (!empty($nestedData) && !in_array($nestedData, $groupedResult[$userId][$alias], true)) {
+                    $groupedResult[$userId][$alias][] = $nestedData;
+                }
+            }
+        }
+
+        return array_values($groupedResult);
+    }
+
+    private function filterAndRenameColumns(array $row, string $alias)
+    {
+        $filtered = array_filter($row, function ($key) use ($alias) {
+            return strpos($key, "{$alias}_") === 0;
+        }, ARRAY_FILTER_USE_KEY);
+
+        return array_combine(
+            array_map(function ($key) use ($alias) {
+                return substr($key, strlen($alias) + 1);
+            }, array_keys($filtered)),
+            $filtered
+        );
+    }
+    
     public function run()
     {
+
+        // $this->buildSelect();
 
         if (stripos($this->query, 'WHERE') === false) {
             $this->buildSelect();
@@ -398,6 +463,9 @@ class DB
         $success = $stmt->execute($this->params);
 
         if (stripos(trim($this->query), 'SELECT') === 0) {
+            if ($this->hasJoin) {
+                return $this->groupJoinResults($stmt->fetchAll(PDO::FETCH_ASSOC));  // Group and nest joined results
+            }
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         
