@@ -1,5 +1,10 @@
-[2025-01-14 02:19:47] Executing Query: SELECT * FROM users ORDER BY id DESC
-With Params: []
+[2025-01-14 02:29:21] Executing Query: SELECT * FROM users ORDER BY id DESC
+With Params: {"id":13}
+
+---------------------------
+
+[2025-01-14 02:29:36] Executing Query: SELECT * FROM users WHERE users.id = :users_id_0 ORDER BY id DESC
+With Params: {"users_id_0":13}
 
 ---------------------------
 

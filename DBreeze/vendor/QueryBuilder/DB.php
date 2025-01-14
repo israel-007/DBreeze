@@ -94,24 +94,12 @@ class DB
 
     public function find($conditions)
     {
-        $this->buildSelect();
-        if ($this->queryType !== 'select') {
-            $this->queryType = 'select';
-        }
+        $this->queryType = 'select';
 
         if (is_int($conditions)) {
-            // Assume conditions as primary table's ID
-            $column = "{$this->table}.id";
-            $this->query .= " WHERE $column = :id";
-            $this->params['id'] = $conditions;
+            $this->where(["{$this->table}.id" => $conditions]);  // Use where() for ID condition
         } elseif (is_array($conditions)) {
-            $clauses = [];
-            foreach ($conditions as $column => $value) {
-                $bindingColumn = str_replace('.', '_', $column);
-                $clauses[] = "$column = :$bindingColumn";
-                $this->params[$bindingColumn] = $value;
-            }
-            $this->query .= " WHERE " . implode(" AND ", $clauses);
+            $this->where($conditions);  // Pass array conditions directly to where()
         }
 
         return $this;
@@ -319,13 +307,6 @@ class DB
         }
 
         $this->buildWhere();  // Build the WHERE clause using stored conditions
-    }
-
-    private function applyConditions()
-    {
-        if (!empty($this->deleteCondition)) {
-            $this->where($this->deleteCondition);  // Handles basic conditions
-        }
     }
 
     public function in($column, $values = [])
