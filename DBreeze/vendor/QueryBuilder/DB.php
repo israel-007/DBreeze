@@ -15,6 +15,8 @@ class DB
     private $joinClauses = [];
     private $joinedTables = [];
     private $selectedColumns = '*';
+    private $deleteCondition = [];
+    private $whereConditions = [];
     private $logFile = 'error_log.txt';
 
     public function __construct($host, $dbname, $username, $password, $debug_dbreeze)
@@ -124,58 +126,106 @@ class DB
 
     public function where($conditions = [])
     {
+        $this->whereConditions = array_merge($this->whereConditions, $conditions);
+        return $this;
+    }
 
-        $this->buildSelect();
-
-        if (!strpos($this->query, 'WHERE')) {
-            $this->query .= " WHERE ";
-        } else {
-            $this->query .= " AND ";
+    private function buildWhere()
+    {
+        if (empty($this->whereConditions)) {
+            return;
         }
 
         $clauses = [];
-        foreach ($conditions as $column => $value) {
+        foreach ($this->whereConditions as $column => $value) {
+            $bindingColumn = str_replace('.', '_', $column) . '_' . count($this->params);
 
-            $bidingColumn = str_replace('.', '_', $column);
-            
-            if (strpos($value, '||') !== false) {
+            if (strpos($value, '|-|') !== false) {
+                // Handle BETWEEN condition
+                $clauses[] = str_replace('|-|', "$column BETWEEN", $value);
+            } elseif (strpos($value, '||') !== false) {
+                // Handle OR conditions
                 $orConditions = explode('||', $value);
                 $orClauses = [];
                 foreach ($orConditions as $index => $orValue) {
                     $param = "{$column}_or_{$index}";
-                    if (strpos($orValue, '%') !== false) {
-                        
-                        $orClauses[] = "$column LIKE :$param";
-                    } else {
-                        
-                        $orClauses[] = "$column = :$param";
-                    }
+                    $orClauses[] = strpos($orValue, '%') !== false ? "$column LIKE :$param" : "$column = :$param";
                     $this->params[$param] = trim($orValue);
                 }
                 $clauses[] = '(' . implode(' OR ', $orClauses) . ')';
-
             } elseif (strpos($value, '%') !== false) {
-                
-                $clauses[] = "$column LIKE :$bidingColumn";
-                $this->params[$bidingColumn] = $value;
-
+                // Handle LIKE condition
+                $clauses[] = "$column LIKE :$bindingColumn";
+                $this->params[$bindingColumn] = $value;
             } elseif (preg_match('/(>=|<=|>|<|!=|=)/', $value, $matches)) {
-                
+                // Handle comparison operators
                 $operator = $matches[0];
                 $realValue = trim(str_replace($operator, '', $value));
-                $clauses[] = "$column $operator :$bidingColumn";
-                $this->params[$bidingColumn] = $realValue;
-
+                $clauses[] = "$column $operator :$bindingColumn";
+                $this->params[$bindingColumn] = $realValue;
             } else {
-                
-                $clauses[] = "$column = :$bidingColumn";
-                $this->params[$bidingColumn] = $value;
+                // Handle equality condition
+                $clauses[] = "$column = :$bindingColumn";
+                $this->params[$bindingColumn] = $value;
             }
         }
 
-        $this->query .= implode(" AND ", $clauses);
-        return $this;
+        $this->query .= (stripos($this->query, 'WHERE') === false ? " WHERE " : " AND ") . implode(" AND ", $clauses);
     }
+    
+    // {
+
+    //     $this->buildSelect();
+
+    //     if (!strpos($this->query, 'WHERE')) {
+    //         $this->query .= " WHERE ";
+    //     } else {
+    //         $this->query .= " AND ";
+    //     }
+
+    //     $clauses = [];
+    //     foreach ($conditions as $column => $value) {
+
+    //         $bidingColumn = str_replace('.', '_', $column);
+            
+    //         if (strpos($value, '||') !== false) {
+    //             $orConditions = explode('||', $value);
+    //             $orClauses = [];
+    //             foreach ($orConditions as $index => $orValue) {
+    //                 $param = "{$column}_or_{$index}";
+    //                 if (strpos($orValue, '%') !== false) {
+                        
+    //                     $orClauses[] = "$column LIKE :$param";
+    //                 } else {
+                        
+    //                     $orClauses[] = "$column = :$param";
+    //                 }
+    //                 $this->params[$param] = trim($orValue);
+    //             }
+    //             $clauses[] = '(' . implode(' OR ', $orClauses) . ')';
+
+    //         } elseif (strpos($value, '%') !== false) {
+                
+    //             $clauses[] = "$column LIKE :$bidingColumn";
+    //             $this->params[$bidingColumn] = $value;
+
+    //         } elseif (preg_match('/(>=|<=|>|<|!=|=)/', $value, $matches)) {
+                
+    //             $operator = $matches[0];
+    //             $realValue = trim(str_replace($operator, '', $value));
+    //             $clauses[] = "$column $operator :$bidingColumn";
+    //             $this->params[$bidingColumn] = $realValue;
+
+    //         } else {
+                
+    //             $clauses[] = "$column = :$bidingColumn";
+    //             $this->params[$bidingColumn] = $value;
+    //         }
+    //     }
+
+    //     $this->query .= (stripos($this->query, 'WHERE') === false ? " WHERE " : " AND ") . implode(" AND ", $clauses);
+    //     return $this;
+    // }
 
     public function limit($start, $end = null)
     {
@@ -248,15 +298,34 @@ class DB
         return $this;
     }
 
-    public function delete(array $conditions = [])
+    public function delete($conditions = [])
     {
-        $this->query = "DELETE FROM {$this->table}";
-
+        $this->queryType = 'delete';
         if (!empty($conditions)) {
-            $this->where($conditions);
+            $this->where($conditions);  // Store conditions for where clause
+        }
+        return $this;
+    }
+
+    public function buildDelete()
+    {
+        if ($this->hasJoin) {
+            $this->query = "DELETE {$this->table} FROM {$this->table}";
+            foreach ($this->joinClauses as $joinClause) {
+                $this->query .= " " . $joinClause;
+            }
+        } else {
+            $this->query = "DELETE FROM {$this->table}";
         }
 
-        return $this;
+        $this->buildWhere();  // Build the WHERE clause using stored conditions
+    }
+
+    private function applyConditions()
+    {
+        if (!empty($this->deleteCondition)) {
+            $this->where($this->deleteCondition);  // Handles basic conditions
+        }
     }
 
     public function in($column, $values = [])
@@ -277,22 +346,19 @@ class DB
 
     public function between($column, $range = [])
     {
-        $this->buildSelect();
-
-        $bindingColumn = str_replace('.', '_', $column);
-
         if (count($range) !== 2) {
             throw new Exception("The between() method requires an array with exactly two values.");
         }
 
-        if (strpos($this->query, 'WHERE') !== false) {
-            $this->query .= " AND $column BETWEEN :{$bindingColumn}_min AND :{$bindingColumn}_max";
-        } else {
-            $this->query .= " WHERE $column BETWEEN :{$bindingColumn}_min AND :{$bindingColumn}_max";
-        }
+        $bindingMin = str_replace('.', '_', $column) . '_min';
+        $bindingMax = str_replace('.', '_', $column) . '_max';
 
-        $this->params["{$bindingColumn}_min"] = $range[0];
-        $this->params["{$bindingColumn}_max"] = $range[1];
+        $this->where([
+            $column => "|-| :{$bindingMin} AND :{$bindingMax}"
+        ]);
+
+        $this->params[$bindingMin] = $range[0];
+        $this->params[$bindingMax] = $range[1];
 
         return $this;
     }
@@ -422,19 +488,23 @@ class DB
 
     private function prepareQuery()
     {
-        if (stripos($this->query, 'WHERE') === false) {
-            $this->buildSelect();
-        }
+        $this->buildSelect();
+        $this->buildWhere();
     }
 
     private function applyOrderBy()
     {
-        if ($this->hasJoin && stripos($this->query, 'ORDER BY') === false) {
-            $this->order($this->table . '.id', 'DESC');
-        }
 
-        if (stripos($this->query, 'ORDER BY') === false) {
-            $this->order('id', 'DESC');
+        if ($this->queryType != 'delete') {
+
+            if ($this->hasJoin && stripos($this->query, 'ORDER BY') === false) {
+                $this->order($this->table . '.id', 'DESC');
+            }
+
+            if (stripos($this->query, 'ORDER BY') === false) {
+                $this->order('id', 'DESC');
+            }
+
         }
     }
 
@@ -474,7 +544,12 @@ class DB
 
     public function run()
     {
-        $this->prepareQuery();
+        if ($this->queryType === 'delete') {
+            $this->buildDelete();
+        } else {
+            $this->prepareQuery();
+        }
+
         $this->applyOrderBy();
         $this->applyLimit();
 
